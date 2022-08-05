@@ -1,0 +1,40 @@
+#Step1
+import arcpy
+from arcpy import env
+from arcpy.sa import *
+#set environment
+env.workspace = r"PATH\Output"
+#Area of interest which is to be clipped
+in_mask_data=r"PATH\AOI.shp"
+#raster(SENTINEL1 and SENTINEL2)
+in_raster=r"PATH\Merged.tif"
+#makeraster
+Ras=arcpy.Raster(in_raster)
+Area=arcpy.MakeFeatureLayer_management(in_mask_data,"SHP")
+
+
+#clipped output	
+Clipped = ExtractByMask(Ras, Area)
+#save file
+arcpy.CopyRaster_management(Clipped,"clippedresult.tif","",0,"0")
+#ignoredbackgroundvalueresult
+
+#Step 2 creating fishnet
+
+#arcpy.management.CreateFishnet(out_feature_class, origin_coord, y_axis_coord, cell_width, cell_height, number_rows, number_columns, {corner_coord}, {labels}, {template}, {geometry_type})
+
+
+arcpy.management.CreateFishnet("fishnet.shp", "343190 2671710", "343190 2671720", 3000, 3000, None, None, "398210 2720320", "LABELS", "343190 2671710 398210 2720320", "POLYGON") 
+
+
+#Step 3 Create buffer
+
+arcpy.analysis.Buffer("fishnet_label", "Buffer5m.shp", "5 Meters", "FULL", "ROUND", "NONE", None, "PLANAR")
+
+
+#Step 4 Minimum bounding
+
+squares=arcpy.management.MinimumBoundingGeometry("Buffer5m", "minimumboundinggeometry.shp", "RECTANGLE_BY_AREA", "NONE", None, "NO_MBG_FIELDS")
+
+#add field
+arcpy.management.AddField(squares, "CLASS", "TEXT")
